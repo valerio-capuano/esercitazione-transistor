@@ -10,7 +10,7 @@
 #include "TStyle.h"
 
 #define N 6
-#define out_name "fit_congiunto.pdf"
+#define out_name "parametri.txt"
 #define in_name "dati_%d.txt"
 
 void fit() 
@@ -26,6 +26,7 @@ void fit()
     Int_t i,j,n;
     Double_t V_ds[100], I[100], V_ds_err[100], I_err[100], V_g, chi_rid;
     
+    fstream out(out_name, ios::out);
     for(i=0; i<N; i++)
         {
             fstream in(Form(in_name, i), ios::in);
@@ -59,6 +60,7 @@ void fit()
                     g_2->SetMarkerStyle(20 + i);
                     g_2->SetMarkerColor(i + 2);
                     g_2->SetLineColor(i + 2);
+                    out<<V_g<<"\t"<<f_2->GetParameter(0)<<"\t"<<f_2->GetParameter(1)<<"\t"<<f_2->GetParameter(2)<<endl;
                     chi_rid = f_2->GetChisquare() / f_2->GetNDF();
                     leg_2->AddEntry(g_2, Form("V_{g} = %.2f V, chi_r = %.2f", V_g, chi_rid), "PL");
                     mg_1->Add(g_1, "P");
