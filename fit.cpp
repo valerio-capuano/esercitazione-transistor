@@ -9,12 +9,14 @@
 #include "TLegend.h"
 #include "TStyle.h"
 
-#define N 6
-#define out_name "parametri.txt"
-#define in_name "dati_%d.txt"
+#define N 6 //numero dataset (tensioni di gate)
+#define out_1_name "parametri_exp.txt" //nome file di input
+#define out_2_name "parametri_tanh.txt" //nome file di input
+#define in_name "dati_%d.txt" //nome file di output
 
 void fit() 
 {
+    //dichiarazione canvas, grafici multipli e variabili
     gStyle->SetOptFit(0000);
     TCanvas *c_1 = new TCanvas("c_1", "fit exp", 800, 600);
     TCanvas *c_2 = new TCanvas("c_2", "fit tanh", 800, 600);
@@ -26,20 +28,26 @@ void fit()
     Int_t i,j,n;
     Double_t V_ds[100], I[100], V_ds_err[100], I_err[100], V_g, chi_rid;
     
-    fstream out(out_name, ios::out);
+    //lettura dataset e scrittura file di output
+    fstream out_1(out_1_name, ios::out);
+    fstream out_2(out_2_name, ios::out);
     for(i=0; i<N; i++)
         {
             fstream in(Form(in_name, i), ios::in);
             if (in.is_open())
                 {  
+                    //lettura numero dati e tensione di gate
                     in>>n;
                     in>>dummy>>V_g;
                     getline(in,dummy);
                     getline(in,dummy);
+                    //lettura tensioni drain source e correnti
                     for(j=0; j<n; j++)
                         {
                             in>>V_ds[j]>>V_ds_err[j]>>I[j]>>I_err[j];
                         }
+
+                    //fit caratteristico con esponenziale
                     TGraphErrors *g_1 = new TGraphErrors(n, V_ds, I, V_ds_err, I_err);
                     TF1 *f_1 = new TF1(Form("f_exp_%d", i), "[0]*(1-exp([1]*x))", 0, 100); 
                     f_1->SetParameters(1, -1);
@@ -48,10 +56,12 @@ void fit()
                     g_1->SetMarkerStyle(20 + i);
                     g_1->SetMarkerColor(i + 2);
                     g_1->SetLineColor(i + 2);
+                    out_1<<V_g<<"\t"<<f_1->GetParameter(0)<<"\t"<<f_1->GetParameter(1)<<endl;
                     chi_rid = f_1->GetChisquare() / f_1->GetNDF();
                     leg_1->AddEntry(g_1, Form("V_{g} = %.2f V, chi_r = %.2f", V_g, chi_rid), "PL"); 
                     mg_1->Add(g_1, "P");
-                    
+
+                    //fit caratteristico con tangente iperbolica
                     TGraphErrors *g_2 = new TGraphErrors(n, V_ds, I, V_ds_err, I_err);
                     TF1 *f_2 = new TF1(Form("f_tanh_%d", i), "[0]*tanh([1]*x)*([2]*x+1)", 0, 100);
                     f_2->SetParameters(2,0); 
@@ -60,13 +70,15 @@ void fit()
                     g_2->SetMarkerStyle(20 + i);
                     g_2->SetMarkerColor(i + 2);
                     g_2->SetLineColor(i + 2);
-                    out<<V_g<<"\t"<<f_2->GetParameter(0)<<"\t"<<f_2->GetParameter(1)<<"\t"<<f_2->GetParameter(2)<<endl;
+                    out_2<<V_g<<"\t"<<f_2->GetParameter(0)<<"\t"<<f_2->GetParameter(1)<<"\t"<<f_2->GetParameter(2)<<endl;
                     chi_rid = f_2->GetChisquare() / f_2->GetNDF();
                     leg_2->AddEntry(g_2, Form("V_{g} = %.2f V, chi_r = %.2f", V_g, chi_rid), "PL");
                     mg_1->Add(g_1, "P");
                     mg_2->Add(g_2, "P");
                 }
         }
+    
+    //visualizzazione canvas 1
     c_1->cd();
     mg_1->Draw("A"); 
     mg_1->GetXaxis()->SetTitle("Tensione drain source (V)");
@@ -74,6 +86,7 @@ void fit()
     mg_1->SetTitle("Fit exp");
     leg_1->Draw();
 
+    //visualizzazione canvas 2
     c_2->cd();
     mg_2->Draw("A"); 
     mg_2->GetXaxis()->SetTitle("Tensione drain source (V)");
