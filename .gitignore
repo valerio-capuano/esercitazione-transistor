@@ -1,0 +1,8 @@
+# File di sistema macOS
+.DS_Store
+
+# File temporanei generati da ROOT
+*_cpp.so
+*_cpp.d
+*_cpp_ACLiC_dict_rdict.pcm
+*.root
